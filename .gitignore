@@ -26,3 +26,4 @@ Thumbs.db
 # Variantes de .env (sauf l exemple)
 .env.*
 !.env.example
+mail-agent/data/db.json
