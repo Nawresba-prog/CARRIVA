@@ -1,0 +1,397 @@
+{
+ "name": "Career workflows",
+ "nodes": [
+  {
+   "parameters": {
+    "rule": {
+     "interval": [
+      {
+       "field": "hours",
+       "hoursInterval": 6
+      }
+     ]
+    }
+   },
+   "name": "WF1 Cron 6h",
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.1,
+   "position": [
+    0,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "url": "https://api.adzuna.com/v1/api/jobs/fr/search/1",
+    "sendQuery": true,
+    "queryParameters": {
+     "parameters": [
+      {
+       "name": "app_id",
+       "value": "={{$env.ADZUNA_ID}}"
+      },
+      {
+       "name": "app_key",
+       "value": "={{$env.ADZUNA_KEY}}"
+      },
+      {
+       "name": "results_per_page",
+       "value": "50"
+      }
+     ]
+    }
+   },
+   "name": "WF1 Fetch jobs",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    220,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const seen = new Set();\nreturn [{ json: { jobs: $input.first().json.results.map(r => ({title: r.title, company: r.company?.display_name || '', country: 'FR', city: r.location?.area?.[3] || '', description: (r.description||'').slice(0,1500), skills: '', url: r.redirect_url, email: '', source: 'adzuna'})).filter(j => !seen.has(j.url) && seen.add(j.url)) } }];"
+   },
+   "name": "WF1 Normalize + dedupe",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    440,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "={{$env.CAREER_API}}/internal/jobs/index",
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "x-internal-secret",
+       "value": "={{$env.INTERNAL_SECRET}}"
+      }
+     ]
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify($json.jobs) }}"
+   },
+   "name": "WF1 Index in Qdrant",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    660,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "rule": {
+     "interval": [
+      {
+       "field": "days",
+       "daysInterval": 1
+      }
+     ]
+    }
+   },
+   "name": "WF2 Cron daily",
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.1,
+   "position": [
+    0,
+    220
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "={{$env.CAREER_API}}/internal/matching/run",
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "x-internal-secret",
+       "value": "={{$env.INTERNAL_SECRET}}"
+      }
+     ]
+    }
+   },
+   "name": "WF2 Run matching",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    220,
+    220
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "number": [
+      {
+       "value1": "={{$json.score}}",
+       "operation": "larger",
+       "value2": 0.6
+      }
+     ]
+    }
+   },
+   "name": "WF2 Score > 0.6",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 1,
+   "position": [
+    440,
+    220
+   ]
+  },
+  {
+   "parameters": {
+    "channel": "#career-alerts",
+    "text": "={{'Nouvelle offre pour ' + $json.user + ' : ' + $json.message + ' → ' + $json.url}}"
+   },
+   "name": "WF2 Notify",
+   "type": "n8n-nodes-base.slack",
+   "typeVersion": 2.1,
+   "position": [
+    660,
+    220
+   ]
+  },
+  {
+   "parameters": {
+    "httpMethod": "POST",
+    "path": "application-status",
+    "responseMode": "onReceived"
+   },
+   "name": "WF3 Webhook status",
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 1.1,
+   "position": [
+    0,
+    440
+   ],
+   "webhookId": "career-application-status"
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "string": [
+      {
+       "value1": "={{$json.body.status}}",
+       "value2": "sent"
+      }
+     ]
+    }
+   },
+   "name": "WF3 Status = sent?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 1,
+   "position": [
+    220,
+    440
+   ]
+  },
+  {
+   "parameters": {
+    "amount": 7,
+    "unit": "days"
+   },
+   "name": "WF3 Wait 7d",
+   "type": "n8n-nodes-base.wait",
+   "typeVersion": 1.1,
+   "position": [
+    440,
+    440
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "={{$env.CAREER_API}}/internal/followup/propose",
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "x-internal-secret",
+       "value": "={{$env.INTERNAL_SECRET}}"
+      }
+     ]
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify({approval_id: $('WF3 Webhook status').item.json.body.approval_id}) }}"
+   },
+   "name": "WF3 Propose follow-up (needs approval)",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    660,
+    440
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "boolean": [
+      {
+       "value1": "={{$json.proposed}}",
+       "value2": true
+      }
+     ]
+    }
+   },
+   "name": "WF3 Proposed?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 1,
+   "position": [
+    880,
+    440
+   ]
+  },
+  {
+   "parameters": {
+    "channel": "#career-alerts",
+    "text": "={{'Relance à valider (candidature de ' + $json.requester + ') : ' + $json.subject + ' → ' + $json.to + '. Ouvrez la liste des approbations (id ' + $json.approval_id + ').'}}"
+   },
+   "name": "WF3 Notify approver",
+   "type": "n8n-nodes-base.slack",
+   "typeVersion": 2.1,
+   "position": [
+    1100,
+    380
+   ]
+  }
+ ],
+ "connections": {
+  "WF1 Cron 6h": {
+   "main": [
+    [
+     {
+      "node": "WF1 Fetch jobs",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "WF1 Fetch jobs": {
+   "main": [
+    [
+     {
+      "node": "WF1 Normalize + dedupe",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "WF1 Normalize + dedupe": {
+   "main": [
+    [
+     {
+      "node": "WF1 Index in Qdrant",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "WF2 Cron daily": {
+   "main": [
+    [
+     {
+      "node": "WF2 Run matching",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "WF2 Run matching": {
+   "main": [
+    [
+     {
+      "node": "WF2 Score > 0.6",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "WF2 Score > 0.6": {
+   "main": [
+    [
+     {
+      "node": "WF2 Notify",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    []
+   ]
+  },
+  "WF3 Webhook status": {
+   "main": [
+    [
+     {
+      "node": "WF3 Status = sent?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "WF3 Status = sent?": {
+   "main": [
+    [
+     {
+      "node": "WF3 Wait 7d",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    []
+   ]
+  },
+  "WF3 Wait 7d": {
+   "main": [
+    [
+     {
+      "node": "WF3 Propose follow-up (needs approval)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "WF3 Propose follow-up (needs approval)": {
+   "main": [
+    [
+     {
+      "node": "WF3 Proposed?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "WF3 Proposed?": {
+   "main": [
+    [
+     {
+      "node": "WF3 Notify approver",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    []
+   ]
+  }
+ },
+ "settings": {
+  "executionOrder": "v1"
+ }
+}

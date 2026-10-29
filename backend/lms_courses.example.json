@@ -1,0 +1,12 @@
+[
+  {
+    "lms_course_id": 7,
+    "title": "Python pour l'analyse de données",
+    "provider": "Mon organisme de formation",
+    "level": "Débutant",
+    "duration": "≈ 20 h",
+    "summary": "Du tableur à Python : lire, nettoyer et analyser des données.",
+    "modules": ["Bases de Python", "Pandas", "Visualisation"],
+    "skills": "python data_analysis sql"
+  }
+]

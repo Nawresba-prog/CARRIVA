@@ -1,0 +1,22 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports: ["6333:6333"]
+    volumes: ["qdrant_data:/qdrant/storage"]
+
+  gmail-service:
+    build: ./gmail-service
+    env_file: .env
+    ports: ["3001:3001"]
+
+  n8n:
+    image: n8nio/n8n:latest
+    ports: ["5678:5678"]
+    environment:
+      CAREER_API: http://host.docker.internal:8000
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+    volumes: ["n8n_data:/home/node/.n8n"]
+
+volumes:
+  qdrant_data:
+  n8n_data:

@@ -1,0 +1,36 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Dépendances
+        run: |
+          pip install -r backend/requirements.txt pytest
+          python backend/fonts/fetch_fonts.py || echo "polices arabes non téléchargées (tests arabes ignorés)"
+      - name: Tests unitaires
+        run: python -m pytest tests -q
+      - name: Test des routes (smoke)
+        run: python tests/n8n_routes_smoke.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Syntaxe JavaScript (front et agents)
+        run: |
+          node --check frontend/cv-templates.js
+          node --check frontend/sw.js
+          python - <<'PY'
+          import re, subprocess, tempfile, pathlib
+          html = pathlib.Path("frontend/index.html").read_text(encoding="utf-8")
+          for i, m in enumerate(re.finditer(r"<script(?![^>]*src)[^>]*>(.*?)</script>", html, re.S)):
+              f = pathlib.Path(tempfile.gettempdir()) / f"inline{i}.js"; f.write_text(m.group(1), encoding="utf-8")
+              subprocess.run(["node", "--check", str(f)], check=True)
+          PY
+          for f in mail-agent/*.js gmail-service/*.js; do [ -f "$f" ] && node --check "$f"; done; true

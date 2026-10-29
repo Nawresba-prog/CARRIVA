@@ -1,0 +1,28 @@
+# Secrets : ne jamais publier
+.env
+*.pem
+*.key
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node
+node_modules/
+
+# Système / éditeur
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Données locales
+*.db
+*.sqlite
+
+# Variantes de .env (sauf l exemple)
+.env.*
+!.env.example
