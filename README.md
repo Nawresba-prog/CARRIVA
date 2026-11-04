@@ -41,7 +41,7 @@ Tout fonctionne **sans abonnement et sans IA obligatoire**. Les agents travaille
 ### Espace Candidat
 | # | Outil | À quoi ça sert |
 |---|---|---|
-| 1 | **CV Europass** | Créer un CV propre (modèles, PDF), saisie vocale, import d'un CV existant (PDF, Word, texte) |
+| 1 | **CV Europass** | Créer un CV propre (modèles, PDF), saisie vocale, import d'un CV existant (PDF, Word, texte) ; option **portfolio web interactif** (page HTML unique, mode nuit, frise des expériences, barres de compétences animées, barre d'actions flottante sur mobile) |
 | 2 | **Offres ciblées** | Offres adaptées à votre profil, alertes |
 | 3 | **Compatibilité ATS** | Taux de correspondance CV / offre, mots-clés manquants |
 | 4 | **Candidatures assistées** | Brouillons de lettres et e-mails, envoi après votre approbation, relance à J+7 |
@@ -94,6 +94,25 @@ Sous Linux / macOS : `source .venv/bin/activate` et `cp .env.example .env`.
 
 Dans `.env`, remplacez `JWT_SECRET`, `INTERNAL_SECRET` et `CERT_SECRET` par des textes aléatoires d'au moins 32 caractères, tous différents  
 (`python -c "import secrets; print(secrets.token_urlsafe(32))"`).
+
+## Version 100 % navigateur (sans serveur) — à partager par un lien
+
+Une version **purement web** de CARRIVA : les agents Python tournent **dans le navigateur** grâce à [Pyodide](https://pyodide.org) (WebAssembly). Aucun serveur, aucune donnée envoyée : elle s'héberge gratuitement sur GitHub Pages et se partage par un simple lien.
+
+**Disponible dans cette version** : CV (modèles dessinés dans le navigateur, import Word/texte), compatibilité ATS, formations, audit LinkedIn, *Lancer mon entreprise à 0 €*, identité de marque et site, messagerie clients, spots publicitaires, plan de retouche, stratégie / RSE.
+**Nécessite la version avec serveur** : offres d'emploi en direct, envoi/lecture d'e-mails (Gmail), PDF Europass officiel, factures PDF / Factur-X, retouche d'image, IA facultative.
+
+**Publier sur GitHub Pages (une seule fois)**
+1. Dans le dépôt : **Settings, Pages, Build and deployment, Source : GitHub Actions**.
+2. À chaque `git push` sur `main`, le workflow `Pages` construit et publie la version navigateur.
+3. Votre lien : `https://VOTRE-NOM.github.io/CARRIVA/`.
+
+**Construire en local**
+```
+python tools/build_static.py                  # utilise le CDN jsDelivr pour Pyodide
+python -m http.server 8000 --directory dist   # puis http://localhost:8000
+```
+Le premier lancement télécharge Pyodide (quelques secondes) ; ensuite l'application est mise en cache et fonctionne hors ligne. Le fichier `index.html` ne peut pas être ouvert par double-clic (`file://`) : il faut un petit serveur de fichiers ou un hébergeur statique.
 
 ## Options (facultatives)
 

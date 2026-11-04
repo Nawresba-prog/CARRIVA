@@ -1,8 +1,8 @@
 /* Service worker CARRIVA : coque de l'application disponible hors ligne.
    Règles de sécurité : seules les ressources statiques de même origine sont mises en cache ; l'API, l'authentification et tout ce qui
    n'est pas un GET ne passent JAMAIS par le cache (aucune donnée personnelle n'est stockée par ce fichier). */
-const VERSION = "carriva-v2";
-const SHELL = ["/", "/cv-templates.js", "/app.css", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
+const VERSION = "carriva-v3";
+const SHELL = ["/", "/cv-templates.js", "/qr.js", "/app.css", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 const STATIC = /^\/(cv-templates\.js|manifest\.webmanifest|app\.css|i18n\.js|icons\/[\w.-]+\.png)$/;
 
 self.addEventListener("install", e => {

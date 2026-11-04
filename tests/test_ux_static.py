@@ -131,3 +131,25 @@ def test_bootstrap_button_7_is_wired():
     for k in re.findall(r'data-i18n(?:-ph)?="((?:bt_|b_boot)[a-z_0-9]*)"', HTML):
         assert k in keys, k
     assert "btCv" not in re.search(r"drGroup\(.*", HTML).group(0) if re.search(r"drGroup\(.*", HTML) else True
+
+
+def test_portfolio_option_in_button_1_is_wired():
+    for needle in ('id="pfBox"', 'id="pfGo"', '"/portfolio/site"', 'id="pfFrame"', 'sandbox="allow-scripts allow-popups'):
+        assert needle in HTML, needle
+    d = json.loads(re.search(r"^const I18N_R = (\{.*?\});\n", HTML, re.S | re.M).group(1))
+    keys = {k for k in d["fr"] if k.startswith("pf_")}
+    assert len(keys) >= 20
+    for lang in ("en", "de", "es", "it", "ar"):
+        assert keys <= set(d[lang]), lang
+
+
+def test_qr_share_and_portfolio_wiring():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    html = (root / "frontend" / "index.html").read_text(encoding="utf-8")
+    for needle in ('src="qr.js"', 'id="shareBtn"', 'id="shareDlg"', 'id="pfqUrl"', 'id="pfqGo"'):
+        assert needle in html, needle
+    assert "https://api.qrserver" not in html and "chart.googleapis" not in html
+    assert (root / "frontend" / "qr.js").exists()
+    assert "/qr.js" in (root / "frontend" / "sw.js").read_text(encoding="utf-8")
+    assert "qr.js" in (root / "tools" / "build_static.py").read_text(encoding="utf-8")

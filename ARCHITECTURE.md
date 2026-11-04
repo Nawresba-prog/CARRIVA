@@ -319,6 +319,23 @@ Les libellés (6 langues) sont dans le bloc `I18N_NAV` de `frontend/index.html`,
 - Chasse aux coûts cachés (6 postes + alternatives gratuites) ; prompt maître prêt à copier dans une IA gratuite (prompt BootstrapBot + CV) ; export PDF du résultat (le prompt maître est exclu du PDF).
 - Frontend : `#p-boot`, clés i18n `bt_*` / `b_boot` (6 langues). Tests : `tests/test_bootstrap_biz.py`, `test_ux_static.py`.
 
+## Version 100 % navigateur (Pyodide)
+
+`tools/build_static.py` produit `dist/` : `index.html` (chemins relatifs, modèle de CV « Moderne » par défaut), `static-shim.js`, `py/files.json` (modules Python purs, dépendances internes résolues automatiquement) et Pyodide (CDN épinglé ou copié dans `dist/pyodide/`).
+- `static-shim.js` remplace `fetch` pour les appels `"/…"` : chaque appel est traité par `backend/static_api.py::handle(method, path, query, body)` exécuté dans Pyodide, qui renvoie la même réponse JSON que `app.py` pour les routes pures (bootstrap, brand, chat, spots, strategy, images/plan, linkedin/audit, cv, cv/import, trainings/standard). Les autres routes répondent 501 avec un message clair.
+- Aucune IA (`ai=False` forcé), aucune donnée envoyée hors du navigateur. Le serveur FastAPI (`app.py`) n'est jamais embarqué.
+- Service worker propre à la version statique (cache du moteur Pyodide = hors-ligne après le premier chargement). Déploiement : `.github/workflows/pages.yml`.
+- Tests : `tests/test_static_build.py`.
+
+## Option du bouton 1 : portfolio web interactif
+
+`backend/portfolio_site.py` + `POST /portfolio/site` (permission `cv`) : à partir du CV saisi, construit UNE page HTML (Tailwind CSS + Font Awesome via CDN, mode nuit, dégradé selon le domaine détecté, photo dans un cercle lumineux ou initiales, frise verticale des expériences, barres de compétences animées, cartes de projets, barre d'actions flottante mobile : appel / WhatsApp / LinkedIn). Règles gratuites, sans IA ni tiers, rien n'est conservé.
+- Niveaux de compétences : saisis (« Python:90 ») ; rien n'est inventé (pas de faux projets ni chiffres) : les manques sont signalés `[⚠️ À COMPLÉTER : …]`. Texte saisi échappé ; seuls les liens http(s), tel: et mailto: sont produits.
+- Aperçu en direct dans une iframe sandbox (mobile / ordinateur), téléchargement du fichier .html. Aussi disponible dans la version navigateur (`static_api.py`). Tests : `tests/test_portfolio_site.py`.
+
 ## Retraits
 
 - Le **tuteur d'autoformation** (3ᵉ onglet de Formations, `backend/tutor.py`, `POST /tutor/master-prompt`) et le **tableau de progression** (tableau d'étapes par espace, coches ✓ sur les boutons) ont été supprimés à la demande de l'utilisateur. Les sections qui les décrivent plus haut sont historiques.
+
+## Codes QR (partage)
+`frontend/qr.js` : encodeur QR autonome (ISO 18004, correction M), sans service tiers. Le bouton « Partager » (en-tête) affiche le QR du lien de l'application ; l'Espace Candidat (option portfolio) génère le QR de l'adresse en ligne du portfolio. Téléchargement PNG côté navigateur.

@@ -1,0 +1,29 @@
+{
+  "leads": [],
+  "log": [],
+  "profile": {
+    "name": "Sara Haddad",
+    "email": "",
+    "phone": "",
+    "job": "",
+    "sector": "",
+    "city": "",
+    "country": "",
+    "skills": "",
+    "summary": "",
+    "languages": "",
+    "experience": "",
+    "education": "",
+    "links": "",
+    "searchLang": "fr",
+    "mailLang": "auto"
+  },
+  "optout": [],
+  "cvMeta": {
+    "source": "template",
+    "template": "classic",
+    "lang": "fr",
+    "pages": 1,
+    "at": "2026-10-23T06:46:31.349Z"
+  }
+}

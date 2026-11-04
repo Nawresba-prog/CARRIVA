@@ -30,7 +30,7 @@ from langgraph.types import Command
 from qdrant_client.models import (Distance, FieldCondition, Filter, Fusion, FusionQuery, MatchValue, PointStruct,
                                   Prefetch, SparseVector, SparseVectorParams, VectorParams)
 
-from . import accesscodes, alerts, bootstrap_biz, catalog, ai_input, brand_site, cert_mail, chat_reply, cv_import, enrich, facturx, followup, growth, invoices, mailbox, strategy, joblinks, jobsources, linkedin, lms, matching, pdf_gen, photo_ai, processing, retouch, report_pdf, spot
+from . import accesscodes, alerts, bootstrap_biz, portfolio_site, catalog, ai_input, brand_site, cert_mail, chat_reply, cv_import, enrich, facturx, followup, growth, invoices, mailbox, strategy, joblinks, jobsources, linkedin, lms, matching, pdf_gen, photo_ai, processing, retouch, report_pdf, spot
 from . import replies, store
 from .agent import build_graph, make_checkpointer
 from .seed_data import SEED_JOBS
@@ -425,6 +425,12 @@ def cv_templates_js():
     return FileResponse(FRONTEND.parent / "cv-templates.js", media_type="text/javascript")
 
 
+@app.get("/qr.js", include_in_schema=False)
+def qr_js():
+    """Générateur de codes QR autonome (aucun service tiers) : partage de l'application et du portfolio."""
+    return FileResponse(FRONTEND.parent / "qr.js", media_type="text/javascript")
+
+
 _PWA = {"manifest.webmanifest": "application/manifest+json", "sw.js": "text/javascript"}
 
 
@@ -787,6 +793,26 @@ def bootstrap_analyze(req: BootstrapReq, user: dict = Depends(require("cv"))):
         return bootstrap_biz.reply(req.model_dump())
     except ValueError as exc:
         raise HTTPException(422, str(exc))
+
+
+class PortfolioReq(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    cv: dict = Field(default_factory=dict)
+    lang: Literal["fr", "en", "de", "es", "it", "ar"] = "fr"
+    field: str = Field("auto", max_length=20)
+    headline: str = Field("", max_length=90)
+    photo_url: str = Field("", max_length=300)
+    whatsapp: str = Field("", max_length=40)
+    linkedin: str = Field("", max_length=300)
+    projects: str = Field("", max_length=2000)
+
+
+@app.post("/portfolio/site")
+def portfolio_site_route(req: PortfolioReq, user: dict = Depends(require("cv"))):
+    """Bouton 1 (Espace Candidat) : portfolio + CV interactif en une page HTML (Tailwind + Font Awesome). Règles, sans IA ni tiers ; rien n'est conservé."""
+    if len(json.dumps(req.cv, ensure_ascii=False)) > 800_000:
+        raise HTTPException(422, "CV trop volumineux")
+    return portfolio_site.build(req.model_dump())
 
 
 class RetouchPlanReq(BaseModel):
