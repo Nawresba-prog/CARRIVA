@@ -41,7 +41,32 @@ Tout fonctionne **sans abonnement et sans IA obligatoire**. Les agents travaille
 ### Espace Candidat
 | # | Outil | À quoi ça sert |
 |---|---|---|
-| 1 | **CV Europass** | Créer un CV propre (modèles, PDF), saisie vocale, import d'un CV existant (PDF, Word, texte) ; option **portfolio web interactif** (page HTML unique, mode nuit, frise des expériences, barres de compétences animées, barre d'actions flottante sur mobile) |
+| 1 | **CV Europass** | Créer un CV propre (modèles, PDF), saisie vocale, import d'un CV existant (PDF, Word, texte) ; option **portfolio web interactif** (page HTML unique, mode nuit, frise des expériences, barres de compétences animées, barre d'actions flottante sur mobile, menu avec suivi de section, mode clair/nuit, export PDF, fiche contact vCard, QR code de la page) |
+
+### Portfolio interactif (Espace Candidat, outil 1)
+
+Transformez votre CV en **un seul fichier HTML** à publier gratuitement (Netlify Drop, GitHub Pages…) et à partager par lien ou par **QR code** :
+
+- hero avec photo lumineuse, dégradé de couleurs adapté à votre domaine, **mode clair / nuit** mémorisé ;
+- menu fixe qui suit la section lue, frise des expériences, **barres de compétences animées**, cartes de projets ;
+- bouton **PDF / impression**, **fiche contact vCard**, **QR code de la page**, barre d'actions flottante sur mobile (appel, WhatsApp, LinkedIn) ;
+- 6 langues (arabe de droite à gauche), aucune donnée inventée : ce qui manque est signalé par `[⚠️ À COMPLÉTER : …]`.
+
+<p align="center">
+  <img src="docs/portfolio-dark.jpg" alt="Portfolio interactif : accueil en mode nuit" width="48%">
+  <img src="docs/portfolio-light.jpg" alt="Portfolio interactif : compétences et expériences en mode clair" width="48%">
+</p>
+<p align="center">
+  <img src="docs/portfolio-projects.jpg" alt="Portfolio interactif : cartes de projets" width="48%">
+  <img src="docs/portfolio-mobile.jpg" alt="Portfolio interactif sur mobile" width="22%">
+</p>
+
+<sub>Exemple fictif : [docs/portfolio-exemple.html](docs/portfolio-exemple.html) (ouvrez-le depuis votre ordinateur après l'avoir téléchargé).</sub>
+
+**Suite de l'Espace Candidat**
+
+| # | Outil | À quoi ça sert |
+|---|---|---|
 | 2 | **Offres ciblées** | Offres adaptées à votre profil, alertes |
 | 3 | **Compatibilité ATS** | Taux de correspondance CV / offre, mots-clés manquants |
 | 4 | **Candidatures assistées** | Brouillons de lettres et e-mails, envoi après votre approbation, relance à J+7 |

@@ -9,7 +9,11 @@ import html as _html
 import re
 import unicodedata
 
+import json
+from urllib.parse import quote
+
 from . import bootstrap_biz
+from .qr_js import QR_JS
 
 LANGS = ("fr", "en", "de", "es", "it", "ar")
 FIELDS = bootstrap_biz.DOMAINS + ("general",)
@@ -25,22 +29,22 @@ PALETTE = {  # (couleur 1, couleur 2, couleur 3) : dégradé adapté au domaine
 }
 
 L = {
-    "fr": dict(about="À propos", exp="Expériences", skills="Compétences", projects="Projets", edu="Formation", langs="Langues", contact="Contact", call="Appeler", wa="WhatsApp",
+    "fr": dict(**{'theme': 'Mode clair / nuit', 'print': 'Enregistrer en PDF / imprimer', 'vcard': 'Ajouter aux contacts', 'qr': 'QR code de cette page', 'top': 'Haut de page', 'close': 'Fermer', 'qr_hint': 'Scannez pour ouvrir ce portfolio sur un téléphone.', 'menu': 'Sections'}, about="À propos", exp="Expériences", skills="Compétences", projects="Projets", edu="Formation", langs="Langues", contact="Contact", call="Appeler", wa="WhatsApp",
                li="LinkedIn", mail="E-mail", present="Présent", hello="Bonjour, je suis", cta="Me contacter", view="Voir le projet", ph="[⚠️ À COMPLÉTER : {x}]", nav="Navigation",
                ph_project="titre et description d'un projet", ph_exp="vos expériences", ph_headline="votre titre professionnel", ph_name="votre nom", rights="Tous droits réservés"),
-    "en": dict(about="About", exp="Experience", skills="Skills", projects="Projects", edu="Education", langs="Languages", contact="Contact", call="Call", wa="WhatsApp",
+    "en": dict(**{'theme': 'Light / dark mode', 'print': 'Save as PDF / print', 'vcard': 'Add to contacts', 'qr': 'QR code of this page', 'top': 'Back to top', 'close': 'Close', 'qr_hint': 'Scan to open this portfolio on a phone.', 'menu': 'Sections'}, about="About", exp="Experience", skills="Skills", projects="Projects", edu="Education", langs="Languages", contact="Contact", call="Call", wa="WhatsApp",
                li="LinkedIn", mail="Email", present="Present", hello="Hello, I'm", cta="Contact me", view="View project", ph="[⚠️ TO COMPLETE: {x}]", nav="Navigation",
                ph_project="a project title and description", ph_exp="your experience", ph_headline="your professional title", ph_name="your name", rights="All rights reserved"),
-    "de": dict(about="Über mich", exp="Berufserfahrung", skills="Kompetenzen", projects="Projekte", edu="Ausbildung", langs="Sprachen", contact="Kontakt", call="Anrufen", wa="WhatsApp",
+    "de": dict(**{'theme': 'Hell / Dunkel', 'print': 'Als PDF speichern / drucken', 'vcard': 'Zu Kontakten hinzufügen', 'qr': 'QR-Code dieser Seite', 'top': 'Nach oben', 'close': 'Schließen', 'qr_hint': 'Scannen, um dieses Portfolio auf dem Handy zu öffnen.', 'menu': 'Bereiche'}, about="Über mich", exp="Berufserfahrung", skills="Kompetenzen", projects="Projekte", edu="Ausbildung", langs="Sprachen", contact="Kontakt", call="Anrufen", wa="WhatsApp",
                li="LinkedIn", mail="E-Mail", present="Heute", hello="Hallo, ich bin", cta="Kontakt aufnehmen", view="Projekt ansehen", ph="[⚠️ ZU ERGÄNZEN: {x}]", nav="Navigation",
                ph_project="Titel und Beschreibung eines Projekts", ph_exp="Ihre Berufserfahrung", ph_headline="Ihre Berufsbezeichnung", ph_name="Ihr Name", rights="Alle Rechte vorbehalten"),
-    "es": dict(about="Sobre mí", exp="Experiencia", skills="Competencias", projects="Proyectos", edu="Formación", langs="Idiomas", contact="Contacto", call="Llamar", wa="WhatsApp",
+    "es": dict(**{'theme': 'Modo claro / oscuro', 'print': 'Guardar como PDF / imprimir', 'vcard': 'Añadir a contactos', 'qr': 'Código QR de esta página', 'top': 'Subir', 'close': 'Cerrar', 'qr_hint': 'Escanee para abrir este portfolio en el móvil.', 'menu': 'Secciones'}, about="Sobre mí", exp="Experiencia", skills="Competencias", projects="Proyectos", edu="Formación", langs="Idiomas", contact="Contacto", call="Llamar", wa="WhatsApp",
                li="LinkedIn", mail="Correo", present="Actualidad", hello="Hola, soy", cta="Contactar", view="Ver proyecto", ph="[⚠️ POR COMPLETAR: {x}]", nav="Navegación",
                ph_project="título y descripción de un proyecto", ph_exp="su experiencia", ph_headline="su título profesional", ph_name="su nombre", rights="Todos los derechos reservados"),
-    "it": dict(about="Chi sono", exp="Esperienze", skills="Competenze", projects="Progetti", edu="Formazione", langs="Lingue", contact="Contatti", call="Chiama", wa="WhatsApp",
+    "it": dict(**{'theme': 'Modalità chiara / scura', 'print': 'Salva come PDF / stampa', 'vcard': 'Aggiungi ai contatti', 'qr': 'Codice QR di questa pagina', 'top': 'Torna su', 'close': 'Chiudi', 'qr_hint': 'Inquadra per aprire questo portfolio sul telefono.', 'menu': 'Sezioni'}, about="Chi sono", exp="Esperienze", skills="Competenze", projects="Progetti", edu="Formazione", langs="Lingue", contact="Contatti", call="Chiama", wa="WhatsApp",
                li="LinkedIn", mail="E-mail", present="Presente", hello="Ciao, sono", cta="Contattami", view="Vedi il progetto", ph="[⚠️ DA COMPLETARE: {x}]", nav="Navigazione",
                ph_project="titolo e descrizione di un progetto", ph_exp="le tue esperienze", ph_headline="il tuo titolo professionale", ph_name="il tuo nome", rights="Tutti i diritti riservati"),
-    "ar": dict(about="نبذة عني", exp="الخبرات", skills="المهارات", projects="المشاريع", edu="التكوين", langs="اللغات", contact="التواصل", call="اتصال", wa="واتساب",
+    "ar": dict(**{'theme': 'الوضع الفاتح / الداكن', 'print': 'حفظ PDF / طباعة', 'vcard': 'إضافة إلى جهات الاتصال', 'qr': 'رمز QR لهذه الصفحة', 'top': 'أعلى الصفحة', 'close': 'إغلاق', 'qr_hint': 'امسح الرمز لفتح هذا المعرض على الهاتف.', 'menu': 'الأقسام'}, about="نبذة عني", exp="الخبرات", skills="المهارات", projects="المشاريع", edu="التكوين", langs="اللغات", contact="التواصل", call="اتصال", wa="واتساب",
                li="لينكدإن", mail="البريد", present="حتى الآن", hello="مرحباً، أنا", cta="تواصل معي", view="عرض المشروع", ph="[⚠️ يُستكمل: {x}]", nav="التنقل",
                ph_project="عنوان ووصف مشروع", ph_exp="خبراتك", ph_headline="مسماك الوظيفي", ph_name="اسمك", rights="جميع الحقوق محفوظة"),
 }
@@ -293,12 +297,48 @@ def build(p: dict) -> dict:
         bar.append(f'<a href="{_e(li)}" target="_blank" rel="noopener noreferrer" class="dock-btn" aria-label="{_e(T["li"])}"><i class="fa-brands fa-linkedin-in" aria-hidden="true"></i><span>{_e(T["li"])}</span></a>')
     dock = f'<nav class="dock" aria-label="{_e(T["contact"])}">{"".join(bar)}</nav>' if bar else ""
 
+    # ---- barre de navigation, outils, vCard, données structurées, QR ------------------------------------------------------------
+    links = [("skills", T["skills"], bool(skills_html)), ("experience", T["exp"], True), ("projects", T["projects"], True), ("education", T["edu"] + " / " + T["langs"], bool(extra_html)), ("contact", T["contact"], True)]
+    nav_links = "".join(f'<a href="#{i}" data-spy="{i}">{_e(lb)}</a>' for i, lb, ok in links if ok)
+    vc = ""
+    if name and (phone or email):
+        def _v(x):
+            return str(x).replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", " ")
+        lines = ["BEGIN:VCARD", "VERSION:3.0", "FN:" + _v(name)]
+        if headline:
+            lines.append("TITLE:" + _v(headline))
+        if phone:
+            lines.append("TEL;TYPE=CELL:+" + phone)
+        if email:
+            lines.append("EMAIL:" + _v(email))
+        for u in (li, web):
+            if u:
+                lines.append("URL:" + u)
+        if city:
+            lines.append("ADR:;;" + _v(city) + ";;;;")
+        lines.append("END:VCARD")
+        vc = (f'<a class="tool" download="{_e(re.sub(r"[^A-Za-z0-9]+", "-", _fold(name)).strip("-") or "contact")}.vcf" href="data:text/vcard;charset=utf-8,{quote(chr(13) + chr(10)).join(quote(x, safe="") for x in lines)}" '
+              f'aria-label="{_e(T["vcard"])}" title="{_e(T["vcard"])}"><i class="fa-solid fa-address-card" aria-hidden="true"></i></a>')
+    tools = (f'<button type="button" class="tool" id="themeBtn" aria-label="{_e(T["theme"])}" title="{_e(T["theme"])}"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i></button>'
+             f'<button type="button" class="tool" id="printBtn" aria-label="{_e(T["print"])}" title="{_e(T["print"])}"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i></button>'
+             + vc +
+             f'<button type="button" class="tool" id="qrBtn" hidden aria-label="{_e(T["qr"])}" title="{_e(T["qr"])}"><i class="fa-solid fa-qrcode" aria-hidden="true"></i></button>')
+    topnav = (f'<div class="progress" id="progress" aria-hidden="true"></div><nav class="topnav" aria-label="{_e(T["menu"])}"><a href="#top" class="brand" aria-label="{_e(T["top"])}">{_e(_initials(name) if name else "•")}</a>'
+              f'<div class="navlinks">{nav_links}</div><div class="tools">{tools}</div></nav>')
+    qrdlg = (f'<dialog id="qrDlg" class="qrdlg" aria-label="{_e(T["qr"])}"><h2 class="text-lg font-bold">{_e(T["qr"])}</h2><div id="qrBox"></div><p class="text-sm text-slate-400">{_e(T["qr_hint"])}</p>'
+             f'<button type="button" class="btn-main" id="qrClose">{_e(T["close"])}</button></dialog>')
+    ld = {"@context": "https://schema.org", "@type": "Person", "name": name, "jobTitle": headline, "email": email, "telephone": ("+" + phone) if phone else "", "address": city,
+          "sameAs": [u for u in (li, web) if u]}
+    ld = {k: v for k, v in ld.items() if v}
+    jsonld = ('<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026") + "</script>") if name else ""
+    totop = f'<button type="button" class="totop" id="toTop" aria-label="{_e(T["top"])}"><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button>'
+
     desc = _c(summary or f"{name} — {headline}", 160)
     page = (_TEMPLATE
             .replace("@@LANG@@", lang).replace("@@DIR@@", "rtl" if rtl else "ltr").replace("@@TITLE@@", _e(f"{name} — {headline}" if name and headline else name or "Portfolio"))
             .replace("@@DESC@@", _e(desc)).replace("@@C1@@", c1).replace("@@C2@@", c2).replace("@@C3@@", c3).replace("@@TAILWIND@@", TAILWIND).replace("@@FA@@", FONTAWESOME)
-            .replace("@@OGIMG@@", f'<meta property="og:image" content="{_e(photo)}">' if photo else "").replace("@@BODY@@", f'{hero}\n<main class="mx-auto max-w-5xl px-5">{skills_html}{exp_html}{proj_html}{extra_html}{contact_html}</main>\n'
-            f'<footer class="px-5 pb-28 pt-10 text-center text-sm text-slate-500 md:pb-10">&copy; {_e(name or "")} · {_e(T["rights"])}</footer>\n{dock}'))
+            .replace("@@JSONLD@@", jsonld).replace("@@QRJS@@", QR_JS).replace("@@OGIMG@@", f'<meta property="og:image" content="{_e(photo)}">' if photo else "").replace("@@BODY@@", f'<span id="top"></span>{topnav}{hero}\n<main class="mx-auto max-w-5xl px-5">{skills_html}{exp_html}{proj_html}{extra_html}{contact_html}</main>\n'
+            f'<footer class="px-5 pb-28 pt-10 text-center text-sm text-slate-500 md:pb-10">&copy; {_e(name or "")} · {_e(T["rights"])}</footer>\n{dock}{totop}{qrdlg}'))
     return {"html": page, "field": field, "warnings": warn, "lang": lang}
 
 
@@ -314,6 +354,8 @@ _TEMPLATE = """<!doctype html>
 <meta property="og:description" content="@@DESC@@">
 <meta property="og:type" content="profile">
 @@OGIMG@@
+@@JSONLD@@
+<script>try{var _t=localStorage.getItem("pf-theme");if(!_t)_t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";if(_t=="light"){document.documentElement.classList.remove("dark");document.documentElement.classList.add("light");}}catch(e){}</script>
 <script src="@@TAILWIND@@"></script>
 <script>document.documentElement.classList.add('js');try{tailwind.config={darkMode:'class'}}catch(e){}</script>
 <link rel="stylesheet" href="@@FA@@" crossorigin="anonymous" referrerpolicy="no-referrer">
@@ -331,7 +373,7 @@ body{margin:0;background:#020617;color:#e2e8f0;font-family:system-ui,-apple-syst
 .btn-main{color:#020617;background:linear-gradient(90deg,var(--c1),var(--c2));box-shadow:0 10px 30px color-mix(in srgb,var(--c2) 40%,transparent)}
 .btn-ghost{color:#e2e8f0;border:1px solid rgba(148,163,184,.4);background:rgba(15,23,42,.6);backdrop-filter:blur(6px)}
 .btn-main:hover,.btn-ghost:hover{transform:translateY(-3px)}
-.section{padding:3.5rem 0}
+.section{padding:3.5rem 0;scroll-margin-top:3.6rem}
 .ico{display:inline-flex;height:2.4rem;width:2.4rem;align-items:center;justify-content:center;border-radius:.8rem;color:#020617;background:linear-gradient(135deg,var(--c1),var(--c2));font-size:1rem}
 .reveal{opacity:1;transform:none;transition:opacity .7s ease,transform .7s ease}
 .js .reveal{opacity:0;transform:translateY(18px)}.js .reveal.in{opacity:1;transform:none}
@@ -354,15 +396,70 @@ mark.ph{background:#fef3c7;color:#111827;border-radius:4px;padding:0 .25em}
 .dock-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:.15rem;padding:.55rem .3rem;border-radius:1rem;color:#fff;text-decoration:none;font-size:.72rem;font-weight:700;background:linear-gradient(135deg,var(--c1),var(--c2));min-height:48px;justify-content:center}
 .dock-btn i{font-size:1.15rem}.dock-wa{background:linear-gradient(135deg,#25d366,#128c7e)}
 @media (min-width:768px){.dock{display:none}}
+.topnav{position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:.6rem;padding:.5rem .8rem;background:rgba(2,6,23,.78);backdrop-filter:blur(14px);border-bottom:1px solid rgba(148,163,184,.2)}
+.brand{display:inline-flex;height:2.4rem;width:2.4rem;flex:none;align-items:center;justify-content:center;border-radius:.8rem;font-weight:900;color:#020617;text-decoration:none;background:linear-gradient(135deg,var(--c1),var(--c2))}
+.navlinks{display:flex;flex:1;gap:.3rem;overflow-x:auto;scrollbar-width:none}.navlinks::-webkit-scrollbar{display:none}
+.navlinks a{white-space:nowrap;padding:.45rem .8rem;border-radius:9999px;color:#94a3b8;text-decoration:none;font-size:.85rem;font-weight:600;transition:color .2s,background .2s}
+.navlinks a:hover{color:#e2e8f0}.navlinks a.on{color:#020617;background:linear-gradient(90deg,var(--c1),var(--c2))}
+.tools{display:flex;gap:.3rem;flex:none}.tool{display:inline-flex;height:2.4rem;width:2.4rem;align-items:center;justify-content:center;border-radius:.8rem;border:1px solid rgba(148,163,184,.3);background:rgba(15,23,42,.6);color:inherit;cursor:pointer;text-decoration:none;font-size:1rem}
+.tool:hover{border-color:var(--c1);color:var(--c1)}.tool[hidden]{display:none}
+.progress{position:fixed;top:0;inset-inline-start:0;z-index:70;height:3px;width:0;background:linear-gradient(90deg,var(--c1),var(--c2),var(--c3))}
+.totop{position:fixed;inset-inline-end:1rem;bottom:5.6rem;z-index:55;height:2.8rem;width:2.8rem;border-radius:9999px;border:0;cursor:pointer;color:#020617;background:linear-gradient(135deg,var(--c1),var(--c2));box-shadow:0 10px 30px rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .25s}
+.totop.show{opacity:1;pointer-events:auto}@media (min-width:768px){.totop{bottom:1.2rem}}
+.card{position:relative;overflow:hidden}.card::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .3s;background:radial-gradient(260px circle at var(--mx,50%) var(--my,0%),color-mix(in srgb,var(--c1) 22%,transparent),transparent 70%)}.card:hover::before{opacity:1}
+.qrdlg{max-width:min(92vw,22rem);border:1px solid rgba(148,163,184,.4);border-radius:1.4rem;padding:1.4rem;text-align:center;background:#0b1224;color:#e2e8f0}.qrdlg::backdrop{background:rgba(2,6,23,.75);backdrop-filter:blur(4px)}
+#qrBox{display:flex;justify-content:center;margin:1rem 0}#qrBox svg{max-width:100%;height:auto;border-radius:.8rem}
+html.light body{background:#f8fafc;color:#0f172a}
+html.light .topnav{background:rgba(255,255,255,.82)}html.light .navlinks a{color:#475569}html.light .navlinks a:hover{color:#0f172a}
+html.light .tool{background:#fff;border-color:#cbd5e1}
+html.light .card,html.light .chip,html.light .contact,html.light .btn-ghost,html.light .dock,html.light .qrdlg{background:#fff;color:#0f172a;border-color:#cbd5e1}
+html.light .text-slate-100,html.light .text-slate-200,html.light .text-slate-300{color:#1e293b}html.light .text-slate-400,html.light .text-slate-500{color:#475569}
+html.light .bar-track{background:#e2e8f0}html.light .tl-dot{box-shadow:0 0 0 4px #f8fafc,0 0 14px var(--c1)}html.light .tl-list{color:#334155}
+html.light .aurora{opacity:.45}html.light .avatar>*{background:#fff}html.light .btn-ghost{color:#0f172a}
+html.light .card-link{color:color-mix(in srgb,var(--c2) 80%,#000)}
+@media print{
+  @page{margin:14mm}
+  .topnav,.progress,.dock,.totop,.aurora,.btn-main,.btn-ghost,.qrdlg{display:none!important}
+  html,body{background:#fff!important;color:#111!important}
+  *{animation:none!important;transition:none!important;box-shadow:none!important;text-shadow:none!important}
+  .js .reveal{opacity:1!important;transform:none!important}.js .bar{width:var(--w)!important}
+  .bg-clip-text,.text-transparent{background:none!important;-webkit-text-fill-color:#111!important;color:#111!important}
+  .text-slate-100,.text-slate-200,.text-slate-300,.text-slate-400,.text-slate-500,.tl-list{color:#222!important}
+  .card,.chip,.contact{background:#fff!important;border:1px solid #bbb!important;color:#111!important}.card::before{display:none}
+  .bar{background:#111!important}.bar-track{background:#ddd!important}
+  .section{padding:1.2rem 0;break-inside:avoid-page}.tl-item,.card{break-inside:avoid}
+  .avatar{box-shadow:none!important;background:#ccc!important}.ico,.card-ico{background:#ddd!important;color:#111!important}
+}
 a:focus-visible,button:focus-visible{outline:3px solid var(--c1);outline-offset:3px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.js .reveal{opacity:1;transform:none}.js .bar{width:var(--w)}}
 </style>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100 antialiased">
 @@BODY@@
+<script>@@QRJS@@</script>
 <script>
 (function(){
-  var els=document.querySelectorAll('.reveal');
+  var d=document,root=d.documentElement,$=function(i){return d.getElementById(i)};
+  function theme(m){root.classList.toggle('light',m==='light');root.classList.toggle('dark',m!=='light');var m2=d.querySelector('meta[name=theme-color]');if(m2)m2.content=m==='light'?'#f8fafc':'#020617';try{localStorage.setItem('pf-theme',m)}catch(e){}}
+  $('themeBtn').onclick=function(){theme(root.classList.contains('light')?'dark':'light')};
+  $('printBtn').onclick=function(){window.print()};
+  var secs=[].slice.call(d.querySelectorAll('[data-spy]')),prog=$('progress'),top=$('toTop');
+  function onScroll(){
+    var h=root.scrollHeight-innerHeight,y=pageYOffset;
+    prog.style.width=(h>0?Math.min(100,y/h*100):0)+'%';top.classList.toggle('show',y>600);
+    var cur='';secs.forEach(function(a){var s=$(a.getAttribute('data-spy'));if(s&&s.getBoundingClientRect().top<innerHeight*.35)cur=a.getAttribute('data-spy')});
+    secs.forEach(function(a){a.classList.toggle('on',a.getAttribute('data-spy')===cur);if(a.classList.contains('on')&&a.scrollIntoView&&a.parentNode.scrollWidth>a.parentNode.clientWidth){a.parentNode.scrollLeft=a.offsetLeft-60}});
+  }
+  addEventListener('scroll',onScroll,{passive:true});onScroll();
+  top.onclick=function(){scrollTo({top:0,behavior:'smooth'})};
+  d.querySelectorAll('.card').forEach(function(c){c.addEventListener('pointermove',function(e){var r=c.getBoundingClientRect();c.style.setProperty('--mx',(e.clientX-r.left)+'px');c.style.setProperty('--my',(e.clientY-r.top)+'px')})});
+  if(/^https?:$/.test(location.protocol)&&window.CARRIVA_QR){
+    var qb=$('qrBtn'),dl=$('qrDlg');qb.hidden=false;
+    qb.onclick=function(){$('qrBox').innerHTML=CARRIVA_QR.svg(location.href.split('#')[0],{size:240});dl.showModal?dl.showModal():dl.setAttribute('open','')};
+    $('qrClose').onclick=function(){dl.close?dl.close():dl.removeAttribute('open')};
+    dl.addEventListener('click',function(e){if(e.target===dl&&dl.close)dl.close()});
+  }
+  var els=d.querySelectorAll('.reveal');
   if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in')});return;}
   var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}})},{threshold:.15});
   els.forEach(function(e){io.observe(e)});

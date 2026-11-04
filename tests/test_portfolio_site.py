@@ -37,3 +37,22 @@ def test_user_text_is_escaped_and_links_are_safe():
     h = r["html"]
     assert "<script>alert(1)" not in h and "<img src=x" not in h and "javascript:" not in h.lower().replace("javascript:alert(1)</", "")
     assert not re.search(r'href="javascript:', h, re.I) and not re.search(r'src="javascript:', h, re.I)
+
+
+def test_portfolio_v2_nav_theme_print_vcard_qr_jsonld():
+    from backend.qr_js import QR_JS
+    from pathlib import Path
+    assert QR_JS == (Path(__file__).resolve().parents[1] / "frontend" / "qr.js").read_text(encoding="utf-8")
+    h = build()["html"]
+    for needle in ("topnav", 'id="themeBtn"', 'id="printBtn"', "html.light", "@media print", "data-spy", 'id="toTop"', "CARRIVA_QR", 'id="qrDlg"', "application/ld+json", "BEGIN%3AVCARD", ".vcf"):
+        assert needle in h, needle
+    assert "BEGIN:VCARD" not in h.split("<body")[1].split("data:text/vcard")[0]
+    x = P.build({"cv": {**CV, "full_name": "</script><b>x"}, "lang": "en"})["html"]
+    assert "</script><b>" not in x and "\\u003c/script" in x
+
+
+def test_brand_site_has_qr():
+    from backend import brand_site
+    r = brand_site.reply({"name": "Café Lune", "sector": "restaurant", "lang": "fr"})
+    h = r["site_html"] if "site_html" in r else r.get("site", {}).get("html", "")
+    assert 'id="qrDlg"' in h and "CARRIVA_QR" in h

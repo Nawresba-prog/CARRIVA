@@ -513,6 +513,11 @@ def reply(p: dict, llm_call=None) -> dict:
     return res
 
 
+_QR_LBL = {"fr": ("QR code du site", "Scannez pour ouvrir ce site sur un téléphone.", "Fermer"), "en": ("Site QR code", "Scan to open this site on a phone.", "Close"),
+           "de": ("QR-Code der Website", "Scannen, um diese Website auf dem Handy zu öffnen.", "Schließen"), "es": ("Código QR del sitio", "Escanee para abrir este sitio en el móvil.", "Cerrar"),
+           "it": ("Codice QR del sito", "Inquadra per aprire questo sito sul telefono.", "Chiudi"), "ar": ("رمز QR للموقع", "امسح الرمز لفتح هذا الموقع على الهاتف.", "إغلاق")}
+
+
 def site_html(name, lang, pal, fonts, pages, T, ph, email, value, rtl, benefits=None, design="modern") -> str:
     e = _html.escape
     P, S, A, N = pal
@@ -524,6 +529,14 @@ def site_html(name, lang, pal, fonts, pages, T, ph, email, value, rtl, benefits=
     ff = f"'{fonts[0]}', 'Segoe UI', system-ui, Arial, sans-serif"; fb = f"'{fonts[1]}', 'Segoe UI', system-ui, Arial, sans-serif"
     gf = "+".join(f.replace(" ", "+") for f in dict.fromkeys(fonts))
     nav = "".join(f'<a href="#{k}">{e(pages[i]["name"])}</a>' for i, k in enumerate(("home", "about", "services", "testimonials", "contact")))
+    from .qr_js import QR_JS
+    ql, qh, qc = _QR_LBL.get(lang, _QR_LBL["fr"])
+    qr_block = (f'''<button type="button" id="qrBtn" class="qrbtn" hidden>{e(ql)}</button>
+<dialog id="qrDlg" class="qrdlg" aria-label="{e(ql)}"><h2>{e(ql)}</h2><div id="qrBox"></div><p>{e(qh)}</p><button type="button" id="qrClose" class="btn">{e(qc)}</button></dialog>
+<script>{QR_JS}</script>
+<script>(function(){{var b=document.getElementById("qrBtn"),d=document.getElementById("qrDlg");if(!/^https?:$/.test(location.protocol)||!window.CARRIVA_QR)return;b.hidden=false;
+b.onclick=function(){{document.getElementById("qrBox").innerHTML=CARRIVA_QR.svg(location.href.split("#")[0],{{size:240}});d.showModal?d.showModal():d.setAttribute("open","")}};
+document.getElementById("qrClose").onclick=function(){{d.close?d.close():d.removeAttribute("open")}};d.addEventListener("click",function(x){{if(x.target===d&&d.close)d.close()}})}})();</script>''')
     return f"""<!doctype html>
 <html lang="{lang}" dir="{'rtl' if rtl else 'ltr'}">
 <head>
@@ -548,6 +561,9 @@ section{{padding:3.5rem 1rem}}.in{{max-width:1080px;margin:auto}}
 .soft{{background:var(--soft)}}ul.cards{{list-style:none;padding:0;margin:1.5rem 0 0;display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}}
 ul.cards li{{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:1.2rem}}mark{{background:#FEF3C7;color:#111827;padding:0 .2em;border-radius:3px}}
 footer{{background:var(--n);color:#fff;padding:1.5rem 1rem;text-align:center}}
+.qrbtn{{margin-inline-start:1rem;min-height:44px;padding:.5rem 1rem;border-radius:10px;border:1px solid #fff;background:transparent;color:#fff;font:inherit;cursor:pointer}}.qrbtn[hidden]{{display:none}}
+.qrdlg{{max-width:min(92vw,22rem);border:0;border-radius:16px;padding:1.4rem;text-align:center;color:var(--n)}}.qrdlg::backdrop{{background:rgba(0,0,0,.6)}}#qrBox{{display:flex;justify-content:center;margin:1rem 0}}#qrBox svg{{max-width:100%;height:auto}}
+@media print{{header,.qrbtn,.qrdlg{{display:none!important}}}}
 {DESIGN_CSS.get(design, '')}
 </style>
 </head>
@@ -561,7 +577,7 @@ footer{{background:var(--n);color:#fff;padding:1.5rem 1rem;text-align:center}}
 <section id="testimonials" class="soft"><div class="in"><h2>{e(pages[3]['headline'])}</h2><p>{e(pages[3]['subtitle'])}</p><ul class="cards"><li><p>{mark(pages[3]['placeholder'])}</p></li></ul></div></section>
 <section id="contact"><div class="in"><h2>{e(pages[4]['headline'])}</h2><p>{e(pages[4]['subtitle'])}</p>{contact}</div></section>
 </main>
-<footer>&copy; {e(name)}</footer>
+<footer>&copy; {e(name)}{qr_block}</footer>
 </body>
 </html>
 """

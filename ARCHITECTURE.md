@@ -339,3 +339,6 @@ Les libellés (6 langues) sont dans le bloc `I18N_NAV` de `frontend/index.html`,
 
 ## Codes QR (partage)
 `frontend/qr.js` : encodeur QR autonome (ISO 18004, correction M), sans service tiers. Le bouton « Partager » (en-tête) affiche le QR du lien de l'application ; l'Espace Candidat (option portfolio) génère le QR de l'adresse en ligne du portfolio. Téléchargement PNG côté navigateur.
+
+`backend/qr_js.py` contient une copie exacte de `frontend/qr.js` (test de synchronisation) : portfolio et site d'entreprise gardent un QR autonome (visible une fois la page publiée en https).
+Portfolio v2 : menu fixe + scrollspy, mode clair/nuit mémorisé, impression PDF propre, vCard (data-URI), JSON-LD Person.
